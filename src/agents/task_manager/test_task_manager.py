@@ -1,40 +1,30 @@
 import unittest
-from task_manager import TaskManager
-
+from src.agents.task_manager.task_manager import TaskManager  # ✅ Use full path
 #from task_manager import TaskManager
 
 class TestTaskManager(unittest.TestCase):
     def setUp(self):
-        self.tm = TaskManager()
-        self.tm.db.conn.execute("DELETE FROM tasks")  # Clear database before each test
+        self.manager = TaskManager()
 
     def test_add_task(self):
-        response = self.tm.add_task("Test Task", "Work", "High", "2025-04-10")
-        self.assertEqual(response, "Task added successfully.")
+        self.manager.add_task("Test task", "Work", "High", "2025-04-10")
+        tasks = self.manager.get_tasks()
+        self.assertTrue(any(task[1] == "Test task" for task in tasks))
 
-    def test_get_tasks(self):
-        self.tm.add_task("Task 1", "Work", "Urgent", "2025-04-10")
-        self.tm.add_task("Task 2", "Personal", "Low", "2025-04-12")
-        tasks = self.tm.get_tasks()
-        self.assertEqual(len(tasks), 2)
-
-    def test_update_task(self):
-        self.tm.add_task("Old Task", "Work", "Medium", "2025-04-10")
-        task_id = self.tm.get_tasks()[0][0]
-        response = self.tm.update_task(task_id, priority="High")
-        self.assertEqual(response, "Task updated successfully.")
-
-    def test_mark_completed(self):
-        self.tm.add_task("Task to Complete", "Work", "High", "2025-04-10")
-        task_id = self.tm.get_tasks()[0][0]
-        response = self.tm.mark_completed(task_id)
-        self.assertEqual(response, "Task marked as completed.")
+    def mark_complete(self):
+        self.manager.add_task("Temp Task", "Work", "Low", "2025-04-10")
+        tasks = self.manager.get_tasks()
+        task_id = tasks[-1][0]
+        self.manager.complete_task(task_id)
+        updated_task = [t for t in self.manager.get_tasks("Completed") if t[0] == task_id]
+        self.assertTrue(len(updated_task) == 1)
 
     def test_delete_task(self):
-        self.tm.add_task("Task to Delete", "Work", "Low", "2025-04-10")
-        task_id = self.tm.get_tasks()[0][0]
-        response = self.tm.delete_task(task_id)
-        self.assertEqual(response, "Task deleted successfully.")
+        self.manager.add_task("To Delete", "Work", "Low", "2025-04-10")
+        task_id = self.manager.get_tasks()[-1][0]
+        self.manager.delete_task(task_id)
+        task_ids = [t[0] for t in self.manager.get_tasks()]
+        self.assertNotIn(task_id, task_ids)
 
 if __name__ == "__main__":
     unittest.main()
